@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<title>IDV: Assignment 03</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>Stacked Bar Chart</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    
+    
+    <style>
+        /* Include your CSS styling here */
+        .axis--x path {
+            display: none;
+        }
+        .bar {
+            fill: steelblue;
+        }
+        .bar:hover {
+            fill: orange;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="w3-padding-large w3-center">
+        <h1><b>Assignment Three</b></h1>
+        <h2><em>HBD</em></h2>
+    </div>
+
+
+    <div id="chart"></div>
+    <script>
+        // Loading CVS DATA
+d3.csv("_ResaleFlatPricesBasedonApprovalDate_COMBINED.csv").then(data => {
+    
+    const margin = {top: 20, right: 30, bottom: 40, left: 90},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    const svg = d3.select("#chart").append("svg")
+
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+
+    // Processing data
+    // Group data by town name
+    // ?? should this not be where the cvs is read for the town name??
+    let dataGrouped = d3.group(data, d => d.town);
+
+    // Convert grouped data into a format suitable for stacked bar chart
+    // This will involve aggregating floor_area_sqm for each resale_price range per town
+    
+
+    // Define scales
+    const xScale = d3.scaleLinear()
+        .range([0, width]);
+        // .domain(...) // Set domain based on your data
+
+    const yScale = d3.scaleBand()
+        .range([height, 0])
+        .padding(0.1);
+        // .domain(...) // Set domain based on your towns
+
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10); // Or any other color scheme
+
+    // Add axes
+    // svg.append("g")
+    //   .attr("class", "axis axis--x")
+    //   .attr("transform", "translate(0," + height + ")")
+    //   .call(d3.axisBottom(xScale));
+
+    // svg.append("g")
+    //   .attr("class", "axis axis--y")
+    //   .call(d3.axisLeft(yScale));
+
+    // Draw bars
+    // You'll need to loop through your data and draw bars for each town and category
+    // Use `colorScale` for color coding categories of `floor_area_sqm`
+
+}).catch(error => console.error('Error loading the data: ', error));
+
+        d3.csv("C:\Users\sarah\OneDrive\Documents\Git files\HASS-assignment3\_ResaleFlatPricesBasedonApprovalDate_COMBINED.csv").then(data => {
+            const margin = {top: 20, right: 30, bottom: 40, left: 90},
+                width = 960 - margin.left - margin.right,
+                height = 500 - margin.top - margin.bottom;
+
+            const svg = d3.select("#chart").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+                .attr("transform",
+                      "translate(" + margin.left + "," + margin.top + ")");
+
+            // Processing data
+            // Group data by town name
+            let dataGrouped = d3.group(data, d => d.town);
+
+            // Convert grouped data into a format suitable for stacked bar chart
+            // This will involve aggregating floor_area_sqm for each resale_price range per town
+
+            // Define scales
+            const xScale = d3.scaleLinear()
+                .range([0, width]);
+                // .domain(...) // Set domain based on your data
+
+            const yScale = d3.scaleBand()
+                .range([height, 0])
+                .padding(0.1);
+                // .domain(...) // Set domain based on your towns
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10); // Or any other color scheme
+
+            // Add axes
+            // svg.append("g")
+            //   .attr("class", "axis axis--x")
+            //   .attr("transform", "translate(0," + height + ")")
+            //   .call(d3.axisBottom(xScale));
+
+            // svg.append("g")
+            //   .attr("class", "axis axis--y")
+            //   .call(d3.axisLeft(yScale));
+
+            // Draw bars
+            // You'll need to loop through your data and draw bars for each town and category
+            // Use `colorScale` for color coding categories of `floor_area_sqm`
+
+        }).catch(error => console.error('Error loading the data: ', error));
+    </script>
+</body>
+</html>

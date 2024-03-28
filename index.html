@@ -1,1 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<title>IDV: Assignment 03</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+<style>
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+
+<body>
+
+  <div class="w3-padding-large w3-center">
+    <h1><b>Assignment Three</b></h1>
+    <h2><em>[Subtitle]</em></h2>
+
+    <h3>
+      <b>Hypothesis</b><br>
+      Main:
+      Older HBD's are of higer value than newers ones<br>
+
+      Sub-Hypothesis 1:
+      This is due to older HBD's having larger floor areas <br>
+
+      Sub-Hypothesis 1:
+      This is dependent on the area the HBD is located in<br>
+     
+      <b>Intention:</b><br>
+
+      1 - On the Y-Axis: The Town Name in which the units are sold (called 'town' in the CVS file).<br> 
+      2 - On the X-Axis: The Resale Price (called 'resale_price'  in the CVS file).<br>
+      3 - The information stacked in each bar: The size of floor area, broken down in a gradient (called 'floor_area_sqm' in the CVS file) - colour coordinated by category.<br> 
+      4 - Highlighted Information: A percentage of number of rooms (called 'unit_type' in the CVS file) <br>
+    </h3>
+</div>
+
+<div>
+  <img src="_Stacked Bar Chart Example.png" alt="LA" style="width:80%; margin-bottom:70px;">
+  <br>
+</div>
+
+<!-- Start of Chart -->
+<canvas id="myChart" style="width:100%;max-width:600px" class="w3-center"></canvas>
+
+<body>
+
+  <div class="w3-padding-large">
+      <h2><em>Interactive attempt</em></h2>
+  </div>
+</body>
+
+<script>
+const xValues = [100,200,300,400,500,600,700,800,900,1000];
+
+new Chart("myChart", {
+  type: "line",
+  data: {
+    labels: xValues,
+    datasets: [{ 
+      label: "One-Bedroom", // room type
+      data: [],
+      borderColor: "red",
+      fill: false
+      
+    }, { 
+      data: [1600,1700,1700,1900,2000,2700,4000,5000,6000,7000],
+      borderColor: "green",
+      fill: false
+    }, { 
+      data: [300,700,2000,5000,6000,4000,2000,1000,200,100],
+      borderColor: "blue",
+      fill: false
+    }]
+  },
+  options: {
+    legend: {display: true}
+  }
+
+
+  
+});
+</script>
+
+</body>
+</html>
 

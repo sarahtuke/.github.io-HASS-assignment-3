@@ -8,10 +8,8 @@
 <!-- Load color scale -->
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 
-<!-- Create a div where the graph will take place -->
-<div id="my_dataviz"></div>
 
-<!-- A bit of CSS: change stroke color of circle on hover (white -> black) -->
+<!-- CSS For Bubbles: change stroke color of circle on hover (white -> black) -->
 <style>
 .bubbles {
   stroke-width: 2px;
@@ -22,14 +20,23 @@
 }
 </style>
 
+<!-- Tittles -->
+<div id="Titles">
+  <h1>Assignment 03</h1>
+  <h2><b>Hypothesis:</b></h2>
+  <h3>01: The Older the HDB - the highe valued they are</h3><br>
+  <h3>02: The Older the HBD - the larger they typically are. The data will suggest a correlation between property size and value</h3>
+</div>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
 
 <script>
-
 // set the dimensions and margins of the graph
-var margin = {top: 10, right: 20, bottom: 30, left: 50},
-    width = 500 - margin.left - margin.right,
-    height = 420 - margin.top - margin.bottom;
-
+var margin = {top: 10, right: 50, bottom: 30, left: 50,},
+    width = 800 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
+ 
 // append the svg object to the body of the page
 var svg = d3.select("#my_dataviz")
   .append("svg")
@@ -41,10 +48,11 @@ var svg = d3.select("#my_dataviz")
 
 //Read the data
 
-/*d3.csv("_data_resale_prices_only.csv", function(error, data) {
+/*d3.csv("data.csv", function(error, data) {
 if (error) throw error;*/
-
 d3.csv("data.csv", function(data) {
+
+//d3.csv("data.csv").then(function(data) {
 
   /*
  // Define Data Extracted from CVS

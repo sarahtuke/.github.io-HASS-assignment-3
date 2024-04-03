@@ -1,85 +1,161 @@
+<!-- Code from d3-graph-gallery.com -->
 <!DOCTYPE html>
-<html>
+<meta charset="utf-8">
 
-<title>IDV: Assignment 03</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
 
+<!-- Load color scale -->
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<!-- A bit of CSS: change stroke color of circle on hover (white -> black) -->
 <style>
+.bubbles {
+  stroke-width: 2px;
+  stroke: white;
+}
+.bubbles:hover {
+  stroke: black;
+}
 </style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
-
-<body>
-
-  <div class="w3-padding-large w3-center">
-    <h1><b>Assignment Three</b></h1>
-    <h2><em>HBD Value of Spaciousness Over the Years</em></h2>
-
-    <h3>
-      <b>Hypothesis</b><br>
-      Main:
-      Older HBD's are of higer value than newers ones<br>
-
-      Sub-Hypothesis 1:
-      This is due to older HBD's having larger floor areas <br>
-
-      Sub-Hypothesis 1:
-      This is dependent on the area the HBD is located in<br>
-     
-      <b>Intention:</b><br>
-
-      1 - On the Y-Axis: The Town Name in which the units are sold (called 'town' in the CVS file).<br> 
-      2 - On the X-Axis: The Resale Price (called 'resale_price'  in the CVS file).<br>
-      3 - The information stacked in each bar: The size of floor area, broken down in a gradient (called 'floor_area_sqm' in the CVS file) - colour coordinated by category.<br> 
-      4 - Highlighted Information: A percentage of number of rooms (called 'unit_type' in the CVS file) <br>
-    </h3>
-</div>
-
-<div>
-  <img src="_Stacked Bar Chart Example.png" alt="LA" style="width:80%; margin-bottom:70px;">
-  <br>
-</div>
-
-<!-- Start of Chart -->
-<canvas id="myChart" style="width:100%;max-width:600px" class="w3-center"></canvas>
-
 
 
 <script>
-const xValues = [100,200,300,400,500,600,700,800,900,1000];
 
-new Chart("myChart", {
-  type: "line",
-  data: {
-    labels: xValues,
-    datasets: [{ 
-      label: "One-Bedroom", // room type
-      data: [1900,1800,1500,1800,1800,2300,4200,3000,9000,8000],
-      borderColor: "red",
-      fill: false
-      
-    }, { 
-      label: "Two-Bedroom", // room type
-      data: [1600,1700,1700,1900,2000,2700,4000,5000,6000,7000],
-      borderColor: "green",
-      fill: false
-    }, { 
-      label: "Three-Bedroom", // room type
-      data: [300,700,2000,5000,6000,4000,2000,1000,200,100],
-      borderColor: "blue",
-      fill: false
-    }]
-  },
-  options: {
-    legend: {display: true}
-  }
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 20, bottom: 30, left: 50},
+    width = 500 - margin.left - margin.right,
+    height = 420 - margin.top - margin.bottom;
 
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+//Read the data
+d3.csv("_data_resale_prices_only.csv", function(error, data) {
+if (error) throw error;
+
+ // Define Data Extracted from CVS
+ data.forEach(function(d) {
+    d.resale_price = +d.resale_price;
+    d.lease_commence_date = +d.lease_commence_date;
+    d.floor_area_sqm = +d.floor_area_sqm;
+  });
+
+// Add Y axis 
+  // Extract Resale Price from the data
+  var ResalePrices = data.map(function(d) {
+    return parseFloat(d['resale_price']); 
+  });
+
+  // Y-axis scale to be determined by Resale Prices
+  var y = d3.scaleLinear()
+    .domain([0, d3.max(ResalePrices)]) // Adjust the domain based on the maximum Resale Price
+    .range([0, width]);
+
+  svg.append("g")
+    .call(d3.axisLeft(y));
+
+
+//Add X axis 
+  //Extract Unit Age from data 
+  var UnitAge = data.map(function(d) {
+    return parseFloat(d['lease_commence_date']); 
+  });
+
+   // X-axis scale to be determined by Unit Age
+   var x = d3.scaleLinear()
+    .domain([0, d3.max(UnitAge)]) // Adjust the domain based on the maximum Lease Commencement Period
+    .range([0, width]);
+
+  svg.append("g")
+    .call(d3.axisLeft(x));
+
+
+
+//The Bubbles
+  // Add a scale for bubble size - the floor area sqm 
 
   
-});
+    //Extract Floor Area
+    var FloorArea = data.map(function(d) {
+      return parseFloat(d['floor_area_sqm']);
+    });
+
+  
+    //Scale to be determined by Floor Area
+    var z = d3.scaleLinear()
+      .domain([0, d3.max(FloorArea)]) // Adjust the domain based on the maximum Floor Area
+      .range([0, width]); 
+
+
+
+  // Add a scale for bubble color - by town
+  var myColor = d3.scaleOrdinal()
+    .domain(["ANG MO KIO", "BEDOK", "BISHAN", "BUKIT BATOK", "BUKIT MERAH", "CENTRAL AREA", "CHOA CHU KANG", "CLEMENTI", "GEYLANG", "HOUGANG", "JURONG EAST", 
+            "JURONG WEST", "KALLANG/WHAMPOA", "MARINE PARADE", "QUEENSTOWN","SENGKANG", "SERANGOON", "TAMPINES", "TOA PAYOH", "WOODLANDS", "YISHUN",
+            "LIM CHU KANG", "SEMBAWANG", "BUKIT PANJANG", "PASIR RIS", "PUNGGOL"])
+    .range(d3.schemeSet2);
+
+  // -1- Create a tooltip div that is hidden by default:
+  var tooltip = d3.select("#my_dataviz")
+    .append("div")
+      .style("opacity", 0)
+      .attr("class", "tooltip")
+      .style("background-color", "black")
+      .style("border-radius", "5px")
+      .style("padding", "10px")
+      .style("color", "white")
+
+  // -2- Create 3 functions to show / update (when mouse move but stay on same circle) / hide the tooltip
+  var showTooltip = function(d) {
+    tooltip
+      .transition()
+      .duration(200)
+    tooltip
+      .style("opacity", 1)
+      .html("Flat Model & Room Number: " + d.flat_type + d.flat_model)
+      .style("left", (d3.mouse(this)[0]+30) + "px")
+      .style("top", (d3.mouse(this)[1]+30) + "px")
+  }
+  var moveTooltip = function(d) {
+    tooltip
+      .style("left", (d3.mouse(this)[0]+30) + "px")
+      .style("top", (d3.mouse(this)[1]+30) + "px")
+  }
+  var hideTooltip = function(d) {
+    tooltip
+      .transition()
+      .duration(200)
+      .style("opacity", 0)
+  }
+
+  // Add dots
+  svg.append('g')
+    .selectAll("dot")
+    .data(data)
+    .enter()
+    .append("circle")
+      .attr("class", "bubbles")
+      .attr("cx", function (d) { return x(d.lease_commence_date); } )
+      .attr("cy", function (d) { return y(d.resale_price); } )
+      .attr("r", function (d) { return z(d.floor_area_sqm); } )
+      .style("fill", function (d) { return myColor(d.town); } )
+    // -3- Trigger the functions
+    .on("mouseover", showTooltip )
+    .on("mousemove", moveTooltip )
+    .on("mouseleave", hideTooltip )
+
+  })
 </script>
 
 </body>
 </html>
-

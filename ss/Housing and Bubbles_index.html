@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Load color scale -->
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+<!-- A bit of CSS: change stroke color of circle on hover (white -> black) -->
+<style>
+.bubbles {
+  stroke-width: 2px;
+  stroke: white;
+}
+.bubbles:hover {
+  stroke: black;
+}
+</style>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<script>
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 20, bottom: 30, left: 50},
+    width = 500 - margin.left - margin.right,
+    height = 420 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// Read the data
+d3.csv("_data_resale_prices_only.csv", function(error, data) {
+  if (error) throw error;
+
+  // Convert data types and set up scales
+  data.forEach(function(d) {
+    d.resale_price = +d.resale_price;
+    d.lease_commence_date = +d.lease_commence_date;
+    d.floor_area_sqm = +d.floor_area_sqm;
+  });
+
+  var xScale = d3.scaleLinear()
+    .domain([0, d3.max(data, function(d) { return d.lease_commence_date; })])
+    .range([0, width]);
+
+  var yScale = d3.scaleLinear()
+    .domain([0, d3.max(data, function(d) { return d.resale_price; })])
+    .range([height, 0]);
+
+  var radiusScale = d3.scaleSqrt()
+    .domain([0, d3.max(data, function(d) { return d.floor_area_sqm; })])
+    .range([2, 10]);
+
+  var colorScale = d3.scaleOrdinal()
+    .domain(["ANG MO KIO", "BEDOK", "BISHAN", "BUKIT BATOK", "BUKIT MERAH", "CENTRAL AREA", "CHOA CHU KANG", "CLEMENTI", "GEYLANG", "HOUGANG", "JURONG EAST", 
+            "JURONG WEST", "KALLANG/WHAMPOA", "MARINE PARADE", "QUEENSTOWN","SENGKANG", "SERANGOON", "TAMPINES", "TOA PAYOH", "WOODLANDS", "YISHUN",
+            "LIM CHU KANG", "SEMBAWANG", "BUKIT PANJANG", "PASIR RIS", "PUNGGOL"])
+    .range(d3.schemeSet2);
+
+  // Add X axis
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(xScale));
+
+  // Add Y axis
+  svg.append("g")
+    .call(d3.axisLeft(yScale));
+
+  // Add bubbles
+  svg.selectAll(".bubble")
+    .data(data)
+    .enter().append("circle")
+      .attr("class", "bubbles")
+      .attr("cx", function(d) { return xScale(d.lease_commence_date); })
+      .attr("cy", function(d) { return yScale(d.resale_price); })
+      .attr("r", function(d) { return radiusScale(d.floor_area_sqm); })
+      .style("fill", function(d) { return colorScale(d.town); })
+      .on("mouseover", function(d) {
+        // Show tooltip
+        d3.select("#tooltip")
+          .style("left", (d3.event.pageX + 10) + "px")
+          .style("top", (d3.event.pageY - 15) + "px")
+          .text("Town: " + d.town + ", Resale Price: " + d.resale_price);
+        d3.select("#tooltip").classed("hidden", false);
+      })
+      .on("mouseout", function() {
+        // Hide tooltip
+        d3.select("#tooltip").classed("hidden", true);
+      });
+});
+
+</script>
+
+<!-- Tooltip -->
+<div id="tooltip" class="hidden"></div>

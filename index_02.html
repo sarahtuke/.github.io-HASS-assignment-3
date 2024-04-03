@@ -9,7 +9,8 @@
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 
 
-<!-- CSS For Bubbles: change stroke color of circle on hover (white -> black) -->
+
+<!-- A bit of CSS: change stroke color of circle on hover (white -> black) -->
 <style>
 .bubbles {
   stroke-width: 2px;
@@ -20,23 +21,16 @@
 }
 </style>
 
-<!-- Tittles -->
-<div id="Titles">
-  <h1>Assignment 03</h1>
-  <h2><b>Hypothesis:</b></h2>
-  <h3>01: The Older the HDB - the highe valued they are</h3><br>
-  <h3>02: The Older the HBD - the larger they typically are. The data will suggest a correlation between property size and value</h3>
-</div>
-
 <!-- Create a div where the graph will take place -->
 <div id="my_dataviz"></div>
 
 <script>
+
 // set the dimensions and margins of the graph
-var margin = {top: 10, right: 50, bottom: 30, left: 50,},
-    width = 800 - margin.left - margin.right,
-    height = 800 - margin.top - margin.bottom;
- 
+var margin = {top: 10, right: 20, bottom: 30, left: 50},
+    width = 500 - margin.left - margin.right,
+    height = 420 - margin.top - margin.bottom;
+
 // append the svg object to the body of the page
 var svg = d3.select("#my_dataviz")
   .append("svg")
@@ -47,87 +41,31 @@ var svg = d3.select("#my_dataviz")
           "translate(" + margin.left + "," + margin.top + ")");
 
 //Read the data
-
-/*d3.csv("data.csv", function(error, data) {
-if (error) throw error;*/
 d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.csv", function(data) {
 
-//d3.csv("data.csv").then(function(data) {
-
-  /*
- // Define Data Extracted from CVS
- data.forEach(function(d) {
-    d.resale_price = +d.resale_price;
-    d.lease_commence_date = +d.lease_commence_date;
-    d.floor_area_sqm = +d.floor_area_sqm;
-    d.town_name = +d.town;
-  });
-  */
-
-
-  //Add X axis
-
-  //Extract Unit Age from data 
-  //var UnitAge = data.map(function(d) {
-    //return parseFloat(d['lease_commence_date']); 
- // });
-
-   // X-axis scale to be determined by Unit Age
-  // var x = d3.scaleLinear()
-  //  .domain([0, d3.max(UnitAge)]) // Adjust the domain based on the maximum Lease Commencement Period
-  //  .range([0, width]);
+  // Add X axis
   var x = d3.scaleLinear()
     .domain([0, 12000])
     .range([ 0, width ]);
-
   svg.append("g")
     .attr("transform", "translate(0," + height + ")")
     .call(d3.axisBottom(x));
 
-// Add Y axis 
-  // Extract Resale Price from the data
-  //var ResalePrices = data.map(function(d) {
-  //  return parseFloat(d['resale_price']); 
- //});
-
-  // Y-axis scale to be determined by Resale Prices
-  //var y = d3.scaleLinear()
- //   .domain([0, d3.max(ResalePrices)]) // Adjust the domain based on the maximum Resale Price
- //   .range([0, width]);
-   // Add Y axis
-   var y = d3.scaleLinear()
+  // Add Y axis
+  var y = d3.scaleLinear()
     .domain([35, 90])
     .range([ height, 0]);
-
   svg.append("g")
     .call(d3.axisLeft(y));
 
-
-//The Bubbles
-  // Add a scale for bubble size - the floor area sqm 
-
-  
-    //Extract Floor Area
-    //var FloorArea = data.map(function(d) {
-   //   return parseFloat(d['floor_area_sqm']);
-   // });
-
-  
-    //Scale to be determined by Floor Area
-   // var z = d3.scaleLinear()
-    //  .domain([0, d3.max(FloorArea)]) // Adjust the domain based on the maximum Floor Area
-   //   .range([0, width]); 
-   var z = d3.scaleLinear()
+  // Add a scale for bubble size
+  var z = d3.scaleLinear()
     .domain([200000, 1310000000])
     .range([ 4, 40]);
 
-
-
-  // Add a scale for bubble color - by town
+  // Add a scale for bubble color
   var myColor = d3.scaleOrdinal()
-    .domain(["ANG MO KIO", "BEDOK", "BISHAN", "BUKIT BATOK", "BUKIT MERAH", "CENTRAL AREA", "CHOA CHU KANG", "CLEMENTI", "GEYLANG", "HOUGANG", "JURONG EAST", 
-            "JURONG WEST", "KALLANG/WHAMPOA", "MARINE PARADE", "QUEENSTOWN","SENGKANG", "SERANGOON", "TAMPINES", "TOA PAYOH", "WOODLANDS", "YISHUN",
-            "LIM CHU KANG", "SEMBAWANG", "BUKIT PANJANG", "PASIR RIS", "PUNGGOL"])
+    .domain(["Asia", "Europe", "Americas", "Africa", "Oceania"])
     .range(d3.schemeSet2);
 
   // -1- Create a tooltip div that is hidden by default:
@@ -147,7 +85,7 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
       .duration(200)
     tooltip
       .style("opacity", 1)
-      .html("Flat Model & Room Number: " + d.flat_type)
+      .html("Country: " + d.country)
       .style("left", (d3.mouse(this)[0]+30) + "px")
       .style("top", (d3.mouse(this)[1]+30) + "px")
   }
@@ -181,6 +119,3 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
 
   })
 </script>
-
-</body>
-</html>

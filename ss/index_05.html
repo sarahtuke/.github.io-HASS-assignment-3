@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Load color scale -->
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+<!-- Load w3 -->
+<script src="https://www.w3schools.com/lib/w3.js"></script>
+
+<!-- A bit of CSS: change stroke color of circle on hover (white -> black) -->
+<style>
+  .bubbles {
+    stroke-width: 2px;
+    stroke: white;
+  }
+  .bubbles:hover {
+    stroke: black;
+  }
+
+  /* Custom Font Styles */
+  .justified-text {
+    text-align: justify;
+  }
+  .large-text {
+    font-size: 24px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .body-text {
+    font-size: 14px;
+    font-family: Arial, Helvetica, sans-serif;
+    list-style-type: decimal;
+  } 
+</style>
+
+<!-- Set the dimensions and margins of the graph -->
+<script>
+  var margin = { top: 10, right: 20, bottom: 30, left: 50 },
+      width = 1300 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+</script>
+
+<!-- Create divs where the graphs will take place -->
+<div id="size_byYears" class="w3-padding-large"></div>
+<div id="my_dataviz" class="w3-padding-large"></div>
+
+<!-- Load the data and create the graph -->
+<script>
+// Read the data
+d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.csv", function(error, data) {
+  if (error) throw error;
+
+  // Parse numeric values
+  data.forEach(function(d) {
+    d.lease_commence_date = +d.lease_commence_date;
+    d.resale_price = +d.resale_price;
+    d.floor_area_sqm = +d.floor_area_sqm;
+  });
+
+  // Group data by 5-year intervals and calculate averages
+  var intervalData = {};
+  data.forEach(function(d) {
+    var interval = 5 * Math.floor(d.lease_commence_date / 5);
+    if (!intervalData[interval]) {
+      intervalData[interval] = { sizeTotal: 0, priceTotal: 0, count: 0 };
+    }
+    intervalData[interval].sizeTotal += d.floor_area_sqm;
+    intervalData[interval].priceTotal += d.resale_price;
+    intervalData[interval].count += 1;
+  });
+
+  var averages = Object.keys(intervalData).map(function(interval) {
+    return {
+      interval: +interval,
+      avgSize: intervalData[interval].sizeTotal / intervalData[interval].count,
+      avgPrice: intervalData[interval].priceTotal / intervalData[interval].count
+    };
+  });
+
+  // Identify Town with largest Areas
+  var largestTownByInterval = {};
+  data.forEach(function(d) {
+    var interval = 5 * Math.floor(d.lease_commence_date / 5);
+    if (!largestTownByInterval[interval] || d.floor_area_sqm > largestTownByInterval[interval].size) {
+        largestTownByInterval[interval] = { town: d.town, size: d.floor_area_sqm };
+    }
+  });
+
+  // Get unique town names for the legend
+  var uniqueTowns = Object.values(largestTownByInterval).map(t => t.town);
+  uniqueTowns = [...new Set(uniqueTowns)]; // Remove duplicates
+
+  // Set up the SVG for graph 1: Average Size by Year
+  var svgSize = d3.select("#size_byYears").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // Define scales for graph 1
+  var x_SizebyYear = d3.scaleLinear()
+      .domain(d3.extent(averages, function(d) { return d.interval; }))
+      .range([0, width]);
+
+  var z_SizebyYear = d3.scaleSqrt()
+      .domain([0, d3.max(averages, function(d) { return d.avgSize; })])
+      .range([2, 40]); // Adjust min and max bubble sizes
+
+  var myColor_SizebyYear = d3.scaleOrdinal(d3.schemeCategory10);
+
+  // Draw bubbles for graph 1
+  averages.forEach(function(d) {
+    svgSize.append("circle")
+      .attr("cx", x_SizebyYear(d.interval))
+      .attr("cy", height / 2) // Center vertically
+      .attr("r", z_SizebyYear(d.avgSize))
+      .attr("fill", myColor_SizebyYear(d.interval));
+  });
+
+  // Add X axis for graph 1
+  svgSize.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x_SizebyYear));
+
+  // Label for X axis
+  svgSize.append("text")
+    .attr("text-anchor", "end")
+    .attr("x", width)
+    .attr("y", height + margin.top + 20)
+    .text("Year (interval)");
+
+  // ------------------------- Graph 2 -------------------
+
+  // Set up the SVG for graph 2: Average Price by Year
+  var svgPrice = d3.select("#my_dataviz").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // Define scales for graph 2
+  var x_PricebyYear = d3.scaleLinear()
+      .domain([0, d3.max(averages, function(d) { return 2024 - d.interval; })])
+      .range([0, width]);
+
+  var y_PricebyYear = d3.scaleLinear()
+      .domain([0, d3.max(averages, function(d) { return d.avgPrice; })])
+      .range([height, 0]);
+
+  var z_PricebyYear = d3.scaleSqrt()
+      .domain([0, d3.max(averages, function(d) { return d.avgSize; })])
+      .range([2, 40]); // Adjust min and max bubble sizes
+
+  var myColor_PricebyYear = d3.scaleOrdinal(d3.schemeCategory10)
+      .domain(uniqueTowns);
+
+  // Draw bubbles for graph 2
+  averages.forEach(function(d) {
+    svgPrice.append("circle")
+      .attr("class", "bubbles")
+      .attr("cx", x_PricebyYear(2024 - d.interval))
+      .attr("cy", y_PricebyYear(d.avgPrice))
+      .attr("r", z_PricebyYear(d.avgSize))
+      .attr("fill", function(d) {
+        return largestTownByInterval[d.interval] ? myColor_PricebyYear(largestTownByInterval[d.interval].town) : '#cccccc';
+      });
+  });
+
+  // Add axes for graph 2
+  svgPrice.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x_PricebyYear));
+
+  svgPrice.append("g")
+      .call(d3.axisLeft(y_PricebyYear));
+
+  // Labels for graph 2 axes
+  svgPrice.append("text")
+    .attr("text-anchor", "end")
+    .attr("x", width)
+    .attr("y", height + margin.top + 20)
+    .text("Age (years)");
+
+  svgPrice.append("text")
+    .attr("text-anchor", "end")
+    .attr("transform", "rotate(-90)")
+    .attr("y", -margin.left + 20)
+    .attr("x", -margin.top)
+    .text("Average Price");
+
+  // Legend for graph 2
+  var legend = svgPrice.selectAll(".legend")
+    .data(uniqueTowns)
+    .enter().append("g")
+    .attr("class", "legend")
+    .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+  legend.append("rect")
+    .attr("x", width - 18)
+    .attr("width", 18)
+    .attr("height", 18)
+    .style("fill", myColor_PricebyYear);
+
+  legend.append("text")
+    .attr("x", width - 24)
+    .attr("y", 9)
+    .attr("dy", ".35em")
+    .style("text-anchor", "end")
+    .text(function(d) { return d; });
+
+});
+</script>

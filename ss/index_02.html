@@ -1,0 +1,205 @@
+<!-- Code from d3-graph-gallery.com -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Load color scale -->
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+
+
+<!-- A bit of CSS: change stroke color of circle on hover (white -> black) -->
+<style>
+.bubbles {
+  stroke-width: 2px;
+  stroke: white;
+}
+.bubbles:hover {
+  stroke: black;
+}
+</style>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 20, bottom: 30, left: 50},
+    width = 800 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+//Read the data
+d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.csv", function(error, data) {
+  if (error) throw error;
+
+   // Parse numeric values and dates
+   data.forEach(function(d) {
+    d.lease_commence_date = +d.lease_commence_date;
+    d.resale_price = +d.resale_price;
+    d.floor_area_sqm = +d.floor_area_sqm;
+  });
+  console.log(data); // To inspect the processed data
+
+
+  // Add X axis
+  // Assuming the current year is 2024, calculate the property age
+var currentYear = 2024;
+
+var x = d3.scaleLinear()
+    .domain([0, d3.max(data, function(d) { return currentYear - d.lease_commence_date; })]) // Find the max age
+    .range([0, width]);
+
+svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x)); // No need to format as 'd' since it's already a number
+
+
+ //Revisions
+    /* R3 Trear year as a Linear Scale (String)
+    var x = d3.scaleLinear()
+      .domain(d3.extent(data, function(d) { return +d.lease_commence_date; })) // Convert string to number
+      .range([0, width]);
+
+  svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x).tickFormat(d3.format("d"))); // Use 'd' for a plain integer format
+
+      */
+
+    /* R2: Treated as Date 
+    // Replace the fixed domains with dynamic ones based on your data
+    var x = d3.scaleTime()
+      .domain(d3.extent(data, function(d) {
+          // Assuming 'lease_commence_date' is just a year, like "1990"
+          return new Date(d.lease_commence_date, 0, 1); // Create a Date object for January 1st of that year
+      }))
+      .range([0, width]);
+
+      svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y"))); // Format the ticks to display only the year
+   /*
+    /* From Sample R1
+    var x = d3.scaleLinear()
+      .domain([0, 12000])
+      .range([ 0, width ]);
+    
+    svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+      */
+
+  // Add Y axis
+  var y = d3.scaleLinear()
+    .domain(d3.extent(data, function(d) { return d.resale_price; }))
+    .range([height, 0]);
+
+
+    /*
+  var y = d3.scaleLinear()
+    .domain([35, 90])
+    .range([ height, 0]);
+    */
+  svg.append("g")
+    .call(d3.axisLeft(y));
+
+  // Add a scale for bubble size
+
+  // Assuming floor_area_sqm values range from minArea to maxArea
+  var minArea = d3.min(data, function(d) { return +d.floor_area_sqm; });
+  var maxArea = d3.max(data, function(d) { return +d.floor_area_sqm; });
+
+  var z = d3.scaleSqrt() // scaleSqrt is often used for area sizes
+    .domain([minArea, maxArea])
+    .range([2, 30]); // Adjust the range values to suit your visualization needs
+
+  
+  //Revision 
+  /* R2: From Sample 
+  var z = d3.scaleLinear()
+    .domain([200000, 1310000000])
+    .range([ 4, 40]);
+    */
+
+
+   // Add a scale for bubble color
+    // Define the color scale's domain after loading and processing the data
+  var towns = Array.from(new Set(data.map(d => d.town)));
+  var myColor = d3.scaleOrdinal()
+    .domain(towns)
+    .range(d3.schemeSet2);
+  
+  //Revisions
+    /*
+  var myColor = d3.scaleOrdinal()
+    .domain("ANG MO KIO", "BEDOK", "BISHAN", "BUKIT BATOK", "BUKIT MERAH", "CENTRAL AREA", "CHOA CHU KANG", "CLEMENTI", "GEYLANG", "HOUGANG", "JURONG EAST", 
+            "JURONG WEST", "KALLANG/WHAMPOA", "MARINE PARADE", "QUEENSTOWN","SENGKANG", "SERANGOON", "TAMPINES", "TOA PAYOH", "WOODLANDS", "YISHUN",
+            "LIM CHU KANG", "SEMBAWANG", "BUKIT PANJANG", "PASIR RIS", "PUNGGOL")
+    .range(d3.schemeSet2);
+    */
+
+  // -1- Create a tooltip div that is hidden by default:
+  var tooltip = d3.select("#my_dataviz")
+    .append("div")
+      .style("opacity", 0)
+      .attr("class", "tooltip")
+      .style("background-color", "black")
+      .style("border-radius", "5px")
+      .style("padding", "10px")
+      .style("color", "white")
+
+  // -2- Create 3 functions to show / update (when mouse move but stay on same circle) / hide the tooltip
+  var showTooltip = function(d) {
+    tooltip
+      .transition()
+      .duration(200)
+    tooltip
+      .style("opacity", 1)
+      .html("Town: " + d.town)
+      .style("left", (d3.mouse(this)[0]+30) + "px")
+      .style("top", (d3.mouse(this)[1]+30) + "px")
+  }
+  var moveTooltip = function(d) {
+    tooltip
+      .style("left", (d3.mouse(this)[0]+30) + "px")
+      .style("top", (d3.mouse(this)[1]+30) + "px")
+  }
+  var hideTooltip = function(d) {
+    tooltip
+      .transition()
+      .duration(200)
+      .style("opacity", 0)
+  }
+
+  // Add dots
+  svg.append('g')
+    .selectAll("dot")
+    .data(data)
+    .enter()
+    .append("circle")
+      .attr("class", "bubbles")
+      //.attr("cx", function (d) { return x(d.lease_commence_date); } )
+      .attr("cx", function (d) { return x(currentYear - d.lease_commence_date); }) // Calculate the age here for the x-coordinate
+      .attr("cy", function (d) { return y(d.resale_price); } )
+      .attr("r", function (d) { return z(d.floor_area_sqm); } )
+      .style("fill", function (d) { return myColor(d.town); } )
+    
+      // -3- Trigger the functions
+    .on("mouseover", showTooltip )
+    .on("mousemove", moveTooltip )
+    .on("mouseleave", hideTooltip )
+
+  })
+</script>

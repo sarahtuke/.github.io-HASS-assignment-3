@@ -66,20 +66,24 @@
 
 <!-- Set the dimensions and margins of the graph -->
 <script>
-  var margin = { top: 10, right: 20, bottom: 30, left: 50 },
-      width = 2000 - margin.left - margin.right,
-      height = 950 - margin.top - margin.bottom;
+  var margin = { top: 50, right: 100, bottom: 50, left: 100},
+      width = 960 - margin.left - margin.right,
+      height = 400 - margin.top - margin.bottom;
 </script>
 
 <!-- Create divs where the graphs will take place -->
-<div id="size_byYears"></div>
-<div id="my_dataviz" class = "w3-col m6" style = "position: relative;" ></div>
+<!--<div id="size_byYears" class="w3-row  w3-center w3-padding-large"></div> -->
+<div id="size_byYears"class="w3-row w3-center w3-padding-large" style="display: flex; justify-content: center; align-items: center;"></div>
+<div id="my_dataviz" class="w3-row w3-center w3-padding-large" style="display: flex; justify-content: center; align-items: center;"></div>
+
 
 <!-- Load the data and create the graph -->
 <script>
 // Read the data
 d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.csv", function(error, data) {
   if (error) throw error;
+
+    //console.log(data);
 
   // Parse numeric values
   data.forEach(function(d) {
@@ -89,6 +93,8 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
   });
 
   // Group data by 5-year intervals and calculate averages
+
+  /*
   var intervalData = {};
   data.forEach(function(d) {
     var interval = 5 * Math.floor(d.lease_commence_date / 5);
@@ -107,24 +113,64 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
       avgPrice: intervalData[interval].priceTotal / intervalData[interval].count
     };
   });
+  */
+
+  // Assuming data is sorted by interval and then by size descending
+data.sort(function(a, b) {
+  return d3.ascending(a.lease_commence_date, b.lease_commence_date) || d3.descending(a.floor_area_sqm, b.floor_area_sqm);
+  
+});
+
+// Group data by 5-year intervals and calculate averages, keeping track of the town with the largest size
+var intervalData = {};
+data.forEach(function(d) {
+  var interval = 5 * Math.floor(d.lease_commence_date / 5);
+  if (!intervalData[interval]) {
+    intervalData[interval] = { sizeTotal: 0, priceTotal: 0, count: 0, largestTown: d.town, largestSize: d.floor_area_sqm };
+  }
+  intervalData[interval].sizeTotal += d.floor_area_sqm;
+  intervalData[interval].priceTotal += d.resale_price;
+  intervalData[interval].count += 1;
+  // Update the largestTown if the current record is larger
+  if (d.floor_area_sqm > intervalData[interval].largestSize) {
+    intervalData[interval].largestTown = d.town;
+    intervalData[interval].largestSize = d.floor_area_sqm;
+
+      console.log("Interval Data:", intervalData); // Log the interval data
+
+  }
+});
+
+var averages = Object.keys(intervalData).map(function(interval) {
+  return {
+    interval: +interval,
+    avgSize: intervalData[interval].sizeTotal / intervalData[interval].count,
+    avgPrice: intervalData[interval].priceTotal / intervalData[interval].count,
+    lrgTown: intervalData[interval].largestTown
+  };
+});
+
+
+
 
 // ----------------------- GRAPH I -----------------------------------
 
   // Set up the SVG for graph 1: Average Size by Year
   var svgSize = d3.select("#size_byYears").append("svg")
       .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + (margin.bottom + 250 ))
+      .attr("height", height + margin.top + (margin.bottom + 150 ))
       .append("g")
-      .attr("transform", "translate(" + (margin.left + 150) + "," + margin.top + ")");
+      .attr("transform", "translate(" + (margin.left ) + "," + margin.top + ")");
 
   // Define scales for graph 1
   var x_SizebyYear = d3.scaleLinear()
       .domain(d3.extent(averages, function(d) { return d.interval; }))
-      .range([width - 20, 20]);
+      //.domain([0, d3.max(averages, function(d) { return d.interval; })])
+      .range([0, width]);
 
   var z_SizebyYear = d3.scaleSqrt()
       .domain([0, d3.max(averages, function(d) { return d.avgSize; })])
-      .range([5, 100]); // Example min and max bubble sizes
+      .range([4, 80]); // Example min and max bubble sizes
 
   var myColor_SizebyYear = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -134,33 +180,32 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
       .attr("cx", x_SizebyYear(d.interval))
       .attr("cy", height / 2 ) // Center vertically
       .attr("r", z_SizebyYear(d.avgSize))
-      .attr("fill", myColor_SizebyYear(d.interval));
+      .attr("fill", myColor_SizebyYear(d.lrgTown));
   });
 
   // Add X axis for graph 1
   svgSize.append("g")
       .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x_SizebyYear))
+      .call(d3.axisBottom(x_SizebyYear).tickFormat(d3.format("d"))) // 'd' format for whole number, which removes commas
       .selectAll("text") // select all the x axis texts
       .style("font-size", "20px"); // increase font size here
 
 
   // X-axis label
+    svgSize.append("text")
+    .attr("text-anchor", "middle")
+    .attr("x", width / 2) // Center on graph
+    .attr("y", height + margin.bottom + 10) // Position below the graph
+    .text("Oldest to Youngest: By Years")
+    .style("font-size", "20px"); // increase font size here;
+
+  // Title
   svgSize.append("text")
-    .attr("text-anchor", "end")
-    .attr("x", width + margin.left - 900)
-    .attr("y", height + margin.top + margin.bottom + 30)
-    .text("Youngest to Oldest: By Years")
+    .attr("text-anchor", "middle")
+    .attr("x", width / 2) // Center 
+    .attr("y", height + margin.bottom + 50) // Position below the X-axis label
+    .text("Graph: Age of lease commencement arranged by largest average unit size")
     .style("font-size", "30px"); // increase font size here;
-
-     // Title
-  svgSize.append("text")
-    .attr("text-anchor", "end")
-    .attr("x", width + margin.left - 900)
-    .attr("y", height + margin.top + margin.bottom + 100)
-    .text("Graph: Age by Size")
-    .style("font-size", "50px"); // increase font size here;
-
 
   
 
@@ -169,15 +214,15 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
 
   // Set up the SVG for graph 2: Average Price by Year
   var svgPrice = d3.select("#my_dataviz").append("svg")
-      .attr("width", width + (margin.left + 150 ) + (margin.right + 350))
-      .attr("height", height + margin.top + (margin.bottom + 200 ))
+      .attr("width", width + (margin.left ) + (margin.right))
+      .attr("height", height + margin.top + (margin.bottom + 250 ))
       .append("g")
-      .attr("transform", "translate(" + (margin.left + 150) + "," + margin.top + ")");
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
   // Define scales for graph 2
   var x_PricebyYear = d3.scaleLinear()
-      .domain([0, d3.max(averages, function(d) { return 2024 - d.interval; })])
-      .range([0, width]);
+      .domain([0, d3.max(averages, function(d) { return (2024 - d.interval) + 5; })])
+      .range([width, 0]);
 
   var y_PricebyYear = d3.scaleLinear()
       .domain([0, d3.max(averages, function(d) { return d.avgPrice; })])
@@ -196,7 +241,7 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
       .attr("cx", x_PricebyYear(2024 - d.interval))
       .attr("cy", y_PricebyYear(d.avgPrice))
       .attr("r", z_PricebyYear(d.avgSize))
-      .attr("fill", myColor_PricebyYear(d.interval));
+      .attr("fill", myColor_PricebyYear(d.lrgTown));
   });
 
   // Add axes for graph 2
@@ -204,21 +249,23 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
       .attr("transform", "translate(0," + height + ")")
       .call(d3.axisBottom(x_PricebyYear))
       .selectAll("text") // select all the x axis texts
-      .style("font-size", "20px"); // increase font size here
+      .style("font-size", "15px"); // increase font size here
 
   svgPrice.append("g")
       .call(d3.axisLeft(y_PricebyYear))
       .selectAll("text") // select all the x axis texts
-      .style("font-size", "20px"); // increase font size here
+      .style("font-size", "15px"); // increase font size here
 
-  // Create and configure the tooltip
+  
+      // Create and configure the tooltip
+  /*
   var tooltip = d3.select("body").append("div")
       .style("opacity", 0)
       .attr("class", "tooltip")
-      .style("background-color", "black")
+      .style("background-color", "red")
       .style("border-radius", "5px")
       .style("padding", "10px")
-      .style("color", "white");
+      .style("color", "black");
 
   // Tooltip functions
   var showTooltip = function(d) {
@@ -246,35 +293,113 @@ d3.csv("https://raw.githubusercontent.com/sarahtuke/HASS-assignment3/main/data.c
     .on("mouseover", showTooltip)
     .on("mousemove", moveTooltip)
     .on("mouseleave", hideTooltip);
+    */
+  
+  // Second try
+  var Tooltip = d3.select("#my_dataviz")
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    //.style("position", "absolute") // Use absolute positioning for tooltip
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("padding", "5px")
+    .style("pointer-events", "none"); // Ensure the tooltip doesn't interfere with mouse events
+
+  // Define Tooltip functions: hover / move / leave a cell
+    var mouseover = function(d) {
+      Tooltip
+        .style("opacity", 1)
+       // .style("visibility", "hidden")
+      d3.select(this)
+        .style("stroke", "black")
+        .style("opacity", 1)
+    }
+    var mousemove = function(d) {
+      Tooltip
+      //.html("Town with largest area of this period: " + d.town + "<br>The Average Resale Price: " + d.avgPrice)
+      .html("Town with largest average SQM:" + d.lrgTown + "<br>Average Resale Price in 5 year interval: $" + d.avgPrice)
+      .style("left", (d3.mouse(this)[0]+70) + "px")
+      .style("top", (d3.mouse(this)[1]) + "px")
+      //.style("left", (d3.event.pageX + 10) + "px") // Position tooltip to the right of the mouse
+      //.style("top", (d3.event.pageY - 10) + "px"); // Position tooltip above the mouse
+    //console.log(d); 
+    }
+
+    /*
+    var mouseleave = function(d) {
+    Tooltip
+    .style("opacity", 0)
+    .style("left", "0px") // Reset position
+    .style("top", "0px") // Reset position
+    // Optionally, you can add these for additional hiding measures:
+    .style("visibility", "hidden")
+    .style("display", "none");
+}*/
 
 
-  // Labels 
-    //X Axis
-    svgPrice.append("text")
-    .attr("text-anchor", "end")
-    .attr("x", width + margin.left - 900)
-    .attr("y", height + margin.top + margin.bottom + 30)
-    .text("Youngest to Oldest: By Age (in 2024)")
-    .style("font-size", "30px"); // increase font size here
+    var mouseleave = function(d) {
+      Tooltip
+        .style("opacity", 0)
+        //.style("visibility", "hidden")
+      d3.select(this)
+        .style("stroke", "none")
+        .style("opacity", 0.8)
+        
+    }
   
 
-    //Y Axis 
+// Trigger tooltip functions on mouse events for graph 2 bubbles
+/*
+svgPrice.selectAll(".bubbles")
+.data(averages)
+    .enter()
+    .append("circle")
+    .attr("class", "bubbles")
+
+    .on("mouseover", mouseover) 
+    .on("mousemove", mousemove) 
+    .on("mouseleave", mouseleave); 
+    */
+  svgPrice.selectAll(".bubbles")
+  .data(averages)
+      .attr("class", "bubbles")
+
+    .on("mouseover", mouseover) 
+    .on("mousemove", mousemove) 
+    .on("mouseleave", mouseleave); 
+
+
+ // Labels 
+     //Y Axis 
     svgPrice.append("text")
-    .attr("text-anchor", "end")
-    .attr("transform", "rotate(-90)")
-    .attr("y", -margin.left - 60 )
-    .attr("x", -margin.top - 350 )
-    .text("Resale Price (SGD)")
-    .style("font-size", "30px"); // increase font size here
+      .attr("text-anchor", "middle")
+      .attr("transform", "rotate(-90)")
+      //.attr("y", -height / 2) // Center 
+      //.attr("x", margin.top, -margin.left)
+      .attr("y", -margin.left + 20)
+      .attr("x", -height / 2)
+      .text("Resale Price Averages (SGD)")
+      .style("font-size", "20px"); // increase font size here
+
+    //X Axis
+    svgPrice.append("text")
+      .attr("text-anchor", "middle")
+      .attr("x", width / 2 )
+      .attr("y", height + (margin.top + 10))
+      .text("Oldest to Youngest: By Age (in 2024)")
+      .style("font-size", "20px"); // increase font size here
 
     
      // Title
     svgPrice.append("text")
-    .attr("text-anchor", "end")
-    .attr("x", width + margin.left - 800)
-    .attr("y", height + margin.top + margin.bottom + 130)
-    .text("Graph: Age by Resale Price")
-    .style("font-size", "50px"); // increase font size here;
+      .attr("text-anchor", "middle")
+      .attr("x", width / 2)
+      .attr("y", height + margin.top + margin.bottom)
+      .text("Graph: Age by Resale Price Averages")
+      .style("font-size", "30px"); // increase font size here;
 
     
 

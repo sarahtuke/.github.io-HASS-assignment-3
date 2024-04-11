@@ -40,6 +40,10 @@
     }
 </style>
 
+<head>
+  <title>IDV: Assignment 03</title>
+</head>
+
 
 <body>
 
@@ -50,7 +54,7 @@
     <h3>
       <b>Hypothesis</b><br>
       Main:
-      Older HBD's are of higer value than newers ones<br>
+      Older HBD's are of higer value than newers ones due to their larger sizes<br>
       <br>
       <br>
       <b>Background:</b><br>
@@ -153,6 +157,7 @@ var averages = Object.keys(intervalData).map(function(interval) {
 
 
 
+
 // ----------------------- GRAPH I -----------------------------------
 
   // Set up the SVG for graph 1: Average Size by Year
@@ -177,6 +182,7 @@ var averages = Object.keys(intervalData).map(function(interval) {
   // Draw bubbles for graph 1
   averages.forEach(function(d) {
     svgSize.append("circle")
+      .attr("class", "bubbles") 
       .attr("cx", x_SizebyYear(d.interval))
       .attr("cy", height / 2 ) // Center vertically
       .attr("r", z_SizebyYear(d.avgSize))
@@ -190,7 +196,105 @@ var averages = Object.keys(intervalData).map(function(interval) {
       .selectAll("text") // select all the x axis texts
       .style("font-size", "20px"); // increase font size here
 
+ 
+    
+  //Tooltips
 
+  var Tooltip = d3.select("#size_byYears")
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("position", "absolute") // Use absolute positioning for tooltip
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("padding", "5px")
+    .style("z-index", "10") // Add a high z-index to the tooltip
+    .style("pointer-events", "none"); // Ensure the tooltip doesn't interfere with mouse events
+
+   
+
+  // Define Event Handler: hover / move / leave a cell
+    var mouseover = function(d) {
+      Tooltip
+        .style("opacity", 1)
+       // .style("visibility", "hidden")
+      d3.select(this)
+        .style("stroke", "black")
+        .style("opacity", 1)
+        
+    }
+    
+    var mousemove = function(d) {
+ 
+        var formattedSize = new Intl.NumberFormat('en-US', {
+          maximumFractionDigits: 2
+
+      }).format(d.avgSize);
+
+
+      Tooltip
+       .html("Town with largest average Sqm: " +`<strong>${d.lrgTown}</strong> `+ "<br> with an average unit size of: " + `<strong>${formattedSize}</strong>` +"sqm")
+           
+      .style("display", "block")
+      .style("left", (d3.event.pageX + 45) + "px") // Position tooltip to the right of the mouse
+      .style("top", (d3.event.pageY - 90) + "px"); // Position tooltip above the mouse
+
+      d3.select(event.currentTarget)
+      .classed("highlighted", true)
+      .style("opacity", 0.8)
+      
+
+    //console.log(d); 
+    }
+
+
+var mouseleave = function(d) {
+      Tooltip
+        .style("opacity", 0)
+      d3.select(this)
+        .style("stroke", "white")
+        .style("opacity", 1)
+        
+    }
+  
+
+// Trigger tooltip functions on mouse events for graph 2 bubbles
+/*
+svgSize.selectAll(".bubbles")
+  .data(averages)
+      .attr("class", "bubbles")
+
+    .on("mouseover", mouseover) 
+    .on("mousemove", mousemove) 
+    .on("mouseleave", mouseleave); 
+    */
+
+  svgSize.selectAll(".bubbles")
+    .data(averages)
+    //.enter().append("circle")
+    .attr("class", "bubbles")
+    //.attr("cx", function(d) { return x_SizebyYear(d.interval); })
+    //.attr("cy", height / 2)
+    //.attr("r", function(d) { return z_SizebyYear(d.avgSize); })
+    //.attr("fill", function(d) { return myColor_SizebyYear(d.lrgTown); })
+    .on("mouseover", mouseover) 
+    .on("mousemove", mousemove) 
+    .on("mouseleave", mouseleave);
+
+
+
+    
+
+  
+
+
+
+
+
+
+  //Labels
   // X-axis label
     svgSize.append("text")
     .attr("text-anchor", "middle")
@@ -204,7 +308,7 @@ var averages = Object.keys(intervalData).map(function(interval) {
     .attr("text-anchor", "middle")
     .attr("x", width / 2) // Center 
     .attr("y", height + margin.bottom + 50) // Position below the X-axis label
-    .text("Graph: Age of lease commencement arranged by largest average unit size")
+    .text("Graph I: Age by lease commencement and average unit size")
     .style("font-size", "30px"); // increase font size here;
 
   
@@ -218,6 +322,14 @@ var averages = Object.keys(intervalData).map(function(interval) {
       .attr("height", height + margin.top + (margin.bottom + 250 ))
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+/*
+  //Converting average price to appear as currency 
+  var formattedPrice = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'SGD',
+  maximumFractionDigits: 0
+  }).format(d.avgPrice);
+  */
 
   // Define scales for graph 2
   var x_PricebyYear = d3.scaleLinear()
@@ -300,15 +412,18 @@ var averages = Object.keys(intervalData).map(function(interval) {
     .append("div")
     .style("opacity", 0)
     .attr("class", "tooltip")
-    //.style("position", "absolute") // Use absolute positioning for tooltip
+    .style("position", "absolute") // Use absolute positioning for tooltip
     .style("background-color", "white")
     .style("border", "solid")
     .style("border-width", "2px")
     .style("border-radius", "5px")
     .style("padding", "5px")
+    .style("z-index", "10") // Add a high z-index to the tooltip
     .style("pointer-events", "none"); // Ensure the tooltip doesn't interfere with mouse events
 
-  // Define Tooltip functions: hover / move / leave a cell
+    const scale = 1.2; // Adjust the scale factor as neededs
+
+  // Define Event Handler: hover / move / leave a cell
     var mouseover = function(d) {
       Tooltip
         .style("opacity", 1)
@@ -316,15 +431,35 @@ var averages = Object.keys(intervalData).map(function(interval) {
       d3.select(this)
         .style("stroke", "black")
         .style("opacity", 1)
+        
     }
+    
     var mousemove = function(d) {
+ 
+      var formattedPrice = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'SGD',
+    maximumFractionDigits: 0
+  }).format(d.avgPrice);
+
+
       Tooltip
       //.html("Town with largest area of this period: " + d.town + "<br>The Average Resale Price: " + d.avgPrice)
-      .html("Town with largest average SQM:" + d.lrgTown + "<br>Average Resale Price in 5 year interval: $" + d.avgPrice)
-      .style("left", (d3.mouse(this)[0]+70) + "px")
-      .style("top", (d3.mouse(this)[1]) + "px")
-      //.style("left", (d3.event.pageX + 10) + "px") // Position tooltip to the right of the mouse
-      //.style("top", (d3.event.pageY - 10) + "px"); // Position tooltip above the mouse
+      .html("Town with largest average Sqm: " + `<strong>${d.lrgTown}</strong> ` + "<br>Average Resale Price in 5 year interval: $" + `<strong>${formattedPrice}</strong> `)
+      //.html("Town with largest average SQM:" + d.lrgTown + "<br>Average Resale Price in 5 year interval: " + formattedPrice)
+      
+      //.style("left", (d3.mouse(this)[0]+70) + "px")
+      //.style("top", (d3.mouse(this)[1]) + "px")
+
+      .style("display", "block")
+      .style("left", (d3.event.pageX + 50) + "px") // Position tooltip to the right of the mouse
+      .style("top", (d3.event.pageY - 10) + "px"); // Position tooltip above the mouse
+
+      d3.select(event.currentTarget)
+      .classed("highlighted", true)
+      //.attr("transform",`translate(${x_PricebyYear * (1 - scale)}, ${y_PricebyYear * (1- scale)}) scale(${scale}, ${scale})`)
+      //.raise(); // Raise section above projection
+
     //console.log(d); 
     }
 
@@ -398,7 +533,7 @@ svgPrice.selectAll(".bubbles")
       .attr("text-anchor", "middle")
       .attr("x", width / 2)
       .attr("y", height + margin.top + margin.bottom)
-      .text("Graph: Age by Resale Price Averages")
+      .text("Graph II: Age by lease commencement and resale price averages")
       .style("font-size", "30px"); // increase font size here;
 
     
@@ -408,5 +543,33 @@ svgPrice.selectAll(".bubbles")
 
 });
 </script>
+
+
+<div class="w3-padding-large w3-center font-size.body-text">
+
+  <h2><em>Findings:</em></h2>
+    <br>
+    <br>
+  <h3>No clear co-realation between size and property value</h3>
+    <br>
+    <br>
+    <b>Expanded:</b><br>
+
+    1. While <em>Graph I</em> shows the average sizes were steadily increasing till the second half of the 90's, then steadily deccreseased in size till our current condition in the first half of the '20's; 
+        along that same time period, <em>Grpah II</em> show a steadily increase in housing value. This giving ground to a possible absence of corrrelation between unit sizes and housing value 
+        <br>
+        (albiet other conditions outside the scope of this study may explain this trend - such as location, property types, proximity to urban amenities, etc.). 
+        <br>
+        <br>
+    2. Note <em>Graph II</em> gives ground to the conclusion: age of unit does influence the market value of housing - since the younger the unit the higher the cost has been. 
+    <br>
+    (albiet other conditions outside the scope of this study may explain this trend - inflation, lease type (free-hold or leasehold), property type, etc.). 
+    <br>
+    <br>
+    <br>
+    <br>
+  </h3>
+</div>
+
 </body>
 </html>
